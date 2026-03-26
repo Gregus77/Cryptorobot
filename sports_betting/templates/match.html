@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}BetScore — Détail du Match{% endblock %}
+
+{% block content %}
+<div id="match-container" data-event-id="{{ event_id }}">
+
+  <!-- Hero du match -->
+  <div class="match-hero" id="match-hero">
+    <div class="loading-card"><i class="fa-solid fa-spinner fa-spin"></i> Chargement du match...</div>
+  </div>
+
+  <!-- Onglets -->
+  <div class="tabs" id="tabs" style="display:none;">
+    <button class="tab-btn active" data-tab="stats"><i class="fa-solid fa-chart-bar"></i> Statistiques</button>
+    <button class="tab-btn" data-tab="betting"><i class="fa-solid fa-chart-pie"></i> Analyse Betting</button>
+    <button class="tab-btn" data-tab="incidents"><i class="fa-solid fa-bolt"></i> Incidents</button>
+    <button class="tab-btn" data-tab="h2h"><i class="fa-solid fa-arrows-left-right"></i> H2H</button>
+    <button class="tab-btn" data-tab="lineups"><i class="fa-solid fa-users"></i> Compos</button>
+  </div>
+
+  <!-- Contenu des onglets -->
+  <div class="tab-content" id="tab-stats" style="display:none;">
+    <h3 class="section-title">Statistiques du Match</h3>
+    <div id="stats-periods" class="period-selector"></div>
+    <div id="stats-content"></div>
+  </div>
+
+  <div class="tab-content" id="tab-betting" style="display:none;">
+    <h3 class="section-title">Analyse & Signaux de Betting</h3>
+    <div id="betting-content"></div>
+  </div>
+
+  <div class="tab-content" id="tab-incidents" style="display:none;">
+    <h3 class="section-title">Événements du Match</h3>
+    <div id="incidents-content"></div>
+  </div>
+
+  <div class="tab-content" id="tab-h2h" style="display:none;">
+    <h3 class="section-title">Confrontations Directes</h3>
+    <div id="h2h-content"></div>
+  </div>
+
+  <div class="tab-content" id="tab-lineups" style="display:none;">
+    <h3 class="section-title">Compositions d'Équipe</h3>
+    <div id="lineups-content"></div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/match.js') }}"></script>
+{% endblock %}
