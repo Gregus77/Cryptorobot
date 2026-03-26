@@ -1,22 +1,58 @@
 {% extends "base.html" %}
-
-{% block title %}BetScore — Paris Sportifs & Analyse SofaScore{% endblock %}
+{% block title %}BetScore — Paris du Jour{% endblock %}
 
 {% block content %}
+
+<!-- ── Header ── -->
 <div class="page-header">
-  <h1>Analyse <span class="accent">Paris Sportifs</span></h1>
-  <p class="subtitle">Données temps réel SofaScore · Statistiques avancées · Signaux de betting</p>
+  <h1><i class="fa-solid fa-crosshairs accent-icon"></i> Paris du Jour</h1>
+  <p class="subtitle">Analyse statistique SofaScore · Loi de Poisson · Sélection automatique des meilleures opportunités</p>
 </div>
 
-<!-- Day selector -->
-<div class="day-selector">
-  <button class="day-btn" data-day="-1"><i class="fa-solid fa-chevron-left"></i> Hier</button>
-  <button class="day-btn active" data-day="0">Aujourd'hui</button>
-  <button class="day-btn" data-day="1">Demain <i class="fa-solid fa-chevron-right"></i></button>
+<!-- ── Sport + Day selector ── -->
+<div class="toolbar">
+  <div class="nav-sports" id="nav-sports">
+    <button class="sport-btn active" data-sport="football"><i class="fa-solid fa-futbol"></i> Football</button>
+    <button class="sport-btn" data-sport="basketball"><i class="fa-solid fa-basketball"></i> Basket</button>
+    <button class="sport-btn" data-sport="tennis"><i class="fa-solid fa-baseball-bat-ball"></i> Tennis</button>
+    <button class="sport-btn" data-sport="ice-hockey"><i class="fa-solid fa-hockey-puck"></i> Hockey</button>
+  </div>
+  <div class="day-selector">
+    <button class="day-btn" data-day="-1"><i class="fa-solid fa-chevron-left"></i> Hier</button>
+    <button class="day-btn active" data-day="0">Aujourd'hui</button>
+    <button class="day-btn" data-day="1">Demain <i class="fa-solid fa-chevron-right"></i></button>
+  </div>
 </div>
 
-<!-- Live section -->
-<section class="section" id="live-section">
+<!-- ═══════════════════════════════════════════════════
+     PICKS DU JOUR — Section principale
+     ═══════════════════════════════════════════════════ -->
+<section class="section picks-section">
+  <div class="section-header">
+    <i class="fa-solid fa-fire accent-icon"></i>
+    <h2>Meilleurs Paris du Jour</h2>
+    <span class="badge badge-picks" id="picks-count">—</span>
+    <button class="refresh-btn" id="refresh-picks" title="Recalculer">
+      <i class="fa-solid fa-rotate"></i>
+    </button>
+  </div>
+  <p class="section-desc">
+    Algorithme de scoring basé sur les <strong>buts marqués / encaissés</strong>,
+    taux Over/BTTS et <strong>loi de Poisson</strong> sur les 8 derniers matchs.
+  </p>
+
+  <div id="picks-container">
+    <div class="picks-loading">
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      <span>Analyse des matchs en cours…</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     Matchs en direct
+     ═══════════════════════════════════════════════════ -->
+<section class="section">
   <div class="section-header">
     <div class="live-dot"></div>
     <h2>Matchs en Direct</h2>
@@ -30,21 +66,21 @@
   </div>
 </section>
 
-<!-- Scheduled section -->
-<section class="section" id="scheduled-section">
+<!-- ═══════════════════════════════════════════════════
+     Matchs programmés
+     ═══════════════════════════════════════════════════ -->
+<section class="section">
   <div class="section-header">
     <i class="fa-solid fa-calendar-days accent-icon"></i>
-    <h2>Matchs Programmés</h2>
+    <h2>Tous les Matchs</h2>
     <span class="badge" id="scheduled-count">0</span>
   </div>
-
-  <!-- Tournament filter -->
   <div class="tournament-filter" id="tournament-filter"></div>
-
   <div class="matches-grid" id="scheduled-matches">
     <div class="loading-card"><i class="fa-solid fa-spinner fa-spin"></i> Chargement...</div>
   </div>
 </section>
+
 {% endblock %}
 
 {% block scripts %}

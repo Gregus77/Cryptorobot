@@ -1,56 +1,48 @@
 /* BetScore — Match detail page */
 
-let matchData = null;
 let betChart = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const container = document.getElementById('match-container');
-  const eventId = container.dataset.eventId;
-
+  const eventId = document.getElementById('match-container').dataset.eventId;
   await loadMatch(eventId);
-
-  // Setup tabs
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 });
 
-// ── Load Match ────────────────────────────────
+// ── Load match ────────────────────────────────
 async function loadMatch(eventId) {
   try {
-    const res = await fetch(`/api/match/${eventId}`);
-    matchData = await res.json();
-
-    if (matchData.error) {
-      document.getElementById('match-hero').innerHTML = `<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i>${matchData.error}</div>`;
+    const res  = await fetch(`/api/match/${eventId}`);
+    const data = await res.json();
+    if (data.error) {
+      document.getElementById('match-hero').innerHTML =
+        `<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i>${data.error}</div>`;
       return;
     }
-
-    renderHero(matchData.summary);
+    renderHero(data.summary);
     document.getElementById('tabs').style.display = 'flex';
 
-    renderStats(matchData.statistics);
-    renderBetting(matchData.betting, matchData.summary);
-    renderIncidents(matchData.incidents, matchData.summary);
-    renderH2H(matchData.h2h, matchData.summary);
+    renderBettingTab(data.betting, data.summary);
+    renderStats(data.statistics);
+    renderIncidents(data.incidents, data.summary);
+    renderH2H(data.h2h, data.summary);
     loadLineups(eventId);
-
-    switchTab('stats');
-  } catch (err) {
-    document.getElementById('match-hero').innerHTML = `<div class="empty-state"><i class="fa-solid fa-wifi"></i>Erreur de chargement</div>`;
+  } catch {
+    document.getElementById('match-hero').innerHTML =
+      `<div class="empty-state"><i class="fa-solid fa-wifi"></i>Erreur de chargement</div>`;
   }
 }
 
-// ── Render Hero ───────────────────────────────
+// ── Hero ──────────────────────────────────────
 function renderHero(s) {
   const statusClass = s.status_type === 'inprogress' ? 'status-live-badge' :
-                      s.status_type === 'finished' ? 'status-finished' : 'status-notstarted';
-  const statusText = s.status_type === 'inprogress' ? `<i class="fa-solid fa-circle-dot"></i> ${s.status_desc || 'En direct'}` :
-                     s.status_type === 'finished' ? 'Terminé' :
-                     formatDateTime(s.start_timestamp);
+                      s.status_type === 'finished'   ? 'status-finished' : 'status-notstarted';
+  const statusText  = s.status_type === 'inprogress' ? `<i class="fa-solid fa-circle-dot"></i> ${s.status_desc || 'En direct'}` :
+                      s.status_type === 'finished'   ? 'Terminé' : formatDateTime(s.start_timestamp);
 
-  const homeScore = s.home_score !== null ? s.home_score : '-';
-  const awayScore = s.away_score !== null ? s.away_score : '-';
+  const hs = s.home_score !== null ? s.home_score : '–';
+  const as = s.away_score !== null ? s.away_score : '–';
 
   document.getElementById('match-hero').innerHTML = `
     <div class="hero-tournament">
@@ -65,7 +57,7 @@ function renderHero(s) {
         <span class="hero-team-name">${s.home_team}</span>
       </div>
       <div class="hero-score">
-        <div class="hero-score-box">${homeScore} – ${awayScore}</div>
+        <div class="hero-score-box">${hs} – ${as}</div>
         <span class="hero-status ${statusClass}">${statusText}</span>
       </div>
       <div class="hero-team">
@@ -77,353 +69,390 @@ function renderHero(s) {
   document.title = `${s.home_team} vs ${s.away_team} — BetScore`;
 }
 
-// ── Render Statistics ─────────────────────────
+// ═══════════════════════════════════════════════════
+// BETTING TAB (main analysis)
+// ═══════════════════════════════════════════════════
+function renderBettingTab(betting, summary) {
+  const content = document.getElementById('betting-content');
+  if (!betting || Object.keys(betting).length === 0) {
+    content.innerHTML = `<div class="empty-state" style="margin-top:2rem;">
+      <i class="fa-solid fa-chart-pie"></i>
+      <p>Analyse indisponible — les données de forme ne sont pas encore disponibles</p>
+    </div>`;
+    return;
+  }
+
+  const hf = betting.home_form || {};
+  const af = betting.away_form || {};
+
+  let html = '';
+
+  // ── Form cards ─────────────────────────────
+  html += `<h3 class="betting-section-title"><i class="fa-solid fa-chart-line accent-icon"></i> Forme récente (${hf.matches || '?'} matchs)</h3>`;
+  html += `<div class="form-grid">
+    ${formCard(summary.home_team, hf)}
+    ${formCard(summary.away_team, af)}
+  </div>`;
+
+  // ── Market rows ────────────────────────────
+  const markets = [];
+  if (betting.over25) markets.push(betting.over25);
+  if (betting.over15) markets.push(betting.over15);
+  if (betting.btts)   markets.push(betting.btts);
+  if (betting.x12 && betting.x12.length) markets.push(betting.x12[0]); // best 1X2
+
+  markets.sort((a, b) => b.confidence - a.confidence);
+  const best = markets[0];
+
+  html += `<h3 class="betting-section-title"><i class="fa-solid fa-fire accent-icon"></i> Analyse par marché</h3>`;
+
+  markets.forEach(m => {
+    const isTop  = m === best;
+    const cc     = confClass(m.confidence);
+    const factors = (m.factors || []).map(f => f).join(' · ');
+    html += `
+      <div class="market-row ${isTop ? 'top-pick' : ''}">
+        <span class="market-icon">${m.icon || '⚽'}</span>
+        <div>
+          <div class="market-name">
+            ${m.market}
+            ${isTop ? '<span style="font-size:.75rem;color:var(--green);margin-left:.5rem;">⭐ Meilleur pari</span>' : ''}
+          </div>
+          <div class="market-factors">${factors}</div>
+        </div>
+        <div class="market-conf">
+          <div class="mc-pct ${cc}">${m.confidence}%</div>
+          <div class="mc-label">confiance</div>
+        </div>
+      </div>
+    `;
+  });
+
+  // ── Doughnut chart ─────────────────────────
+  if (betting.x12 && betting.x12.length >= 3) {
+    const x12 = betting.x12;
+    html += `<h3 class="betting-section-title" style="margin-top:2rem;">
+      <i class="fa-solid fa-chart-pie accent-icon"></i> Probabilités 1X2</h3>`;
+    html += `<div class="bet-chart-wrap"><canvas id="betChart" height="220"></canvas></div>`;
+
+    const best1x2 = x12[0];
+    html += `<div style="text-align:center;margin-bottom:1rem;">
+      Favori : <strong>${best1x2.market}</strong>
+      <span class="pick-ribbon ribbon-${confClass(best1x2.confidence)}" style="position:static;display:inline-block;margin-left:.5rem">
+        ${best1x2.confidence}%
+      </span>
+    </div>`;
+  }
+
+  // ── Disclaimer ─────────────────────────────
+  html += `<div class="disclaimer">
+    <i class="fa-solid fa-triangle-exclamation" style="margin-top:.1rem"></i>
+    <span>Analyse basée sur les statistiques SofaScore (loi de Poisson, forme sur 8 matchs).
+    Le pari sportif comporte des risques. Jouez de manière responsable.</span>
+  </div>`;
+
+  content.innerHTML = html;
+
+  // Draw chart after DOM update
+  if (betting.x12 && betting.x12.length >= 3) {
+    setTimeout(() => drawX12Chart(betting.x12, summary), 80);
+  }
+}
+
+function formCard(teamName, f) {
+  if (!f || Object.keys(f).length === 0) return `<div class="form-card"><p style="color:var(--text2)">Données indisponibles</p></div>`;
+
+  const dots = (f.form_str || []).map(r =>
+    `<span class="form-dot dot-${r}">${r}</span>`
+  ).join('');
+
+  return `
+    <div class="form-card">
+      <div class="form-card-title">${teamName}</div>
+      <div class="form-dots">${dots}</div>
+      <div class="stat-mini-grid">
+        <div class="stat-mini-item">
+          <div class="sm-label">Buts marqués/m</div>
+          <div class="sm-val sm-green">${f.avg_scored}</div>
+        </div>
+        <div class="stat-mini-item">
+          <div class="sm-label">Buts encaissés/m</div>
+          <div class="sm-val sm-red">${f.avg_conceded}</div>
+        </div>
+        <div class="stat-mini-item">
+          <div class="sm-label">Over 2.5</div>
+          <div class="sm-val sm-blue">${f.over25_rate_pct}%</div>
+        </div>
+        <div class="stat-mini-item">
+          <div class="sm-label">BTTS</div>
+          <div class="sm-val sm-blue">${f.btts_rate_pct}%</div>
+        </div>
+        <div class="stat-mini-item">
+          <div class="sm-label">Win rate</div>
+          <div class="sm-val">${f.win_rate_pct}%</div>
+        </div>
+        <div class="stat-mini-item">
+          <div class="sm-label">Clean sheets</div>
+          <div class="sm-val">${f.clean_sheet_pct}%</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function drawX12Chart(x12, summary) {
+  const ctx = document.getElementById('betChart');
+  if (!ctx) return;
+  if (betChart) betChart.destroy();
+
+  const sorted = [...x12].sort((a, b) => {
+    const order = ['home_win', 'draw', 'away_win'];
+    return order.indexOf(a.market_key) - order.indexOf(b.market_key);
+  });
+
+  betChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: sorted.map(m => m.market),
+      datasets: [{
+        data:            sorted.map(m => m.confidence),
+        backgroundColor: ['#3fb950', '#d29922', '#f85149'],
+        borderWidth: 0,
+        hoverOffset: 8,
+      }],
+    },
+    options: {
+      responsive: true, cutout: '60%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#8b949e', font: { family: 'Inter', size: 12 }, padding: 16 },
+        },
+        tooltip: {
+          callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(1)}%` },
+        },
+      },
+    },
+  });
+}
+
+function confClass(c) {
+  if (c >= 75) return 'high';
+  if (c >= 65) return 'medium';
+  return 'low';
+}
+
+// ── Statistics tab ────────────────────────────
 function renderStats(stats) {
-  const periods = ['ALL', '1ST', '2ND'];
-  const availablePeriods = periods.filter(p =>
+  const periods = ['ALL', '1ST', '2ND'].filter(p =>
     Object.keys(stats).some(k => k.startsWith(p + '_'))
   );
 
-  const periodSel = document.getElementById('stats-periods');
-  periodSel.innerHTML = '';
+  const sel = document.getElementById('stats-periods');
+  sel.innerHTML = '';
 
-  availablePeriods.forEach((p, i) => {
+  if (periods.length === 0) {
+    document.getElementById('stats-content').innerHTML =
+      '<div class="empty-state"><i class="fa-solid fa-chart-bar"></i><p>Statistiques non disponibles</p></div>';
+    return;
+  }
+
+  periods.forEach((p, i) => {
     const btn = document.createElement('button');
     btn.className = 'period-btn' + (i === 0 ? ' active' : '');
-    btn.textContent = p === 'ALL' ? 'Match entier' : p === '1ST' ? '1ère mi-temps' : '2ème mi-temps';
+    btn.textContent = p === 'ALL' ? 'Match entier' : p === '1ST' ? '1ère MT' : '2ème MT';
     btn.dataset.period = p;
     btn.addEventListener('click', () => {
       document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       renderStatRows(stats, p);
     });
-    periodSel.appendChild(btn);
+    sel.appendChild(btn);
   });
 
-  if (availablePeriods.length > 0) renderStatRows(stats, availablePeriods[0]);
-  else document.getElementById('stats-content').innerHTML = '<div class="empty-state"><i class="fa-solid fa-chart-bar"></i><p>Statistiques non disponibles</p></div>';
+  renderStatRows(stats, periods[0]);
 }
 
 function renderStatRows(stats, period) {
   const content = document.getElementById('stats-content');
-  const rows = Object.entries(stats)
+  const rows    = Object.entries(stats)
     .filter(([k]) => k.startsWith(period + '_'))
     .map(([k, v]) => ({ key: k.replace(period + '_', ''), ...v }));
 
-  if (rows.length === 0) {
-    content.innerHTML = '<div class="empty-state"><i class="fa-solid fa-chart-bar"></i><p>Aucune statistique pour cette période</p></div>';
+  if (!rows.length) {
+    content.innerHTML = '<div class="empty-state"><i class="fa-solid fa-chart-bar"></i><p>Aucune stat pour cette période</p></div>';
     return;
   }
 
   content.innerHTML = rows.map(row => {
-    const hVal = parseFloat(row.home_value) || 0;
-    const aVal = parseFloat(row.away_value) || 0;
-    const total = hVal + aVal || 1;
-    const hPct = (hVal / total * 100).toFixed(0);
-    const aPct = (aVal / total * 100).toFixed(0);
-
-    const homeDisplay = row.home || row.home_value || '0';
-    const awayDisplay = row.away || row.away_value || '0';
-
+    const hv   = parseFloat(row.home_value) || 0;
+    const av   = parseFloat(row.away_value) || 0;
+    const tot  = hv + av || 1;
+    const hPct = (hv / tot * 100).toFixed(0);
+    const aPct = (av / tot * 100).toFixed(0);
     return `
       <div class="stat-row">
         <div class="stat-side home">
-          <span class="stat-value">${homeDisplay}</span>
-          <div class="stat-bar-wrap">
-            <div class="stat-bar-fill" style="width:${hPct}%"></div>
-          </div>
+          <span class="stat-value">${row.home || row.home_value || '0'}</span>
+          <div class="stat-bar-wrap"><div class="stat-bar-fill" style="width:${hPct}%"></div></div>
         </div>
         <div class="stat-name">${row.name || row.key}</div>
         <div class="stat-side away">
-          <span class="stat-value">${awayDisplay}</span>
-          <div class="stat-bar-wrap">
-            <div class="stat-bar-fill" style="width:${aPct}%"></div>
-          </div>
+          <span class="stat-value">${row.away || row.away_value || '0'}</span>
+          <div class="stat-bar-wrap"><div class="stat-bar-fill" style="width:${aPct}%"></div></div>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
 
-// ── Render Betting ────────────────────────────
-function renderBetting(betting, summary) {
-  const content = document.getElementById('betting-content');
-
-  if (!betting || Object.keys(betting).length === 0) {
-    content.innerHTML = '<div class="empty-state"><i class="fa-solid fa-chart-pie"></i><p>Analyse indisponible (match non commencé ou sans données)</p></div>';
-    return;
-  }
-
-  const { home_pct, draw_pct, away_pct, signal, confidence } = betting;
-
-  const signalLabel = signal === 'DOMICILE'
-    ? `<strong style="color:var(--green)">${summary.home_team}</strong>`
-    : signal === 'EXTERIEUR'
-    ? `<strong style="color:var(--red)">${summary.away_team}</strong>`
-    : `<strong style="color:var(--yellow)">Match Nul</strong>`;
-
-  const bars = (pct) => {
-    const filled = Math.round(pct / 20);
-    return Array.from({ length: 5 }, (_, i) =>
-      `<div class="signal-bar ${i < filled ? 'filled' : ''}"></div>`
-    ).join('');
-  };
-
-  content.innerHTML = `
-    <div class="bet-chart-wrap">
-      <canvas id="betChart" height="200"></canvas>
-    </div>
-
-    <div class="betting-panel">
-      <div class="bet-card bet-home ${signal === 'DOMICILE' ? 'recommended' : ''}">
-        <div class="bet-label">${summary.home_team}</div>
-        <div class="bet-pct">${home_pct}%</div>
-        ${signal === 'DOMICILE' ? '<span class="rec-badge"><i class="fa-solid fa-star"></i> Recommandé</span>' : ''}
-        <div class="confidence-bar"><div class="confidence-fill" style="width:${home_pct}%"></div></div>
-      </div>
-      <div class="bet-card bet-draw ${signal === 'NUL' ? 'recommended' : ''}">
-        <div class="bet-label">Match Nul</div>
-        <div class="bet-pct">${draw_pct}%</div>
-        ${signal === 'NUL' ? '<span class="rec-badge"><i class="fa-solid fa-star"></i> Recommandé</span>' : ''}
-        <div class="confidence-bar"><div class="confidence-fill" style="width:${draw_pct}%"></div></div>
-      </div>
-      <div class="bet-card bet-away ${signal === 'EXTERIEUR' ? 'recommended' : ''}">
-        <div class="bet-label">${summary.away_team}</div>
-        <div class="bet-pct">${away_pct}%</div>
-        ${signal === 'EXTERIEUR' ? '<span class="rec-badge"><i class="fa-solid fa-star"></i> Recommandé</span>' : ''}
-        <div class="confidence-bar"><div class="confidence-fill" style="width:${away_pct}%"></div></div>
-      </div>
-    </div>
-
-    <div class="match-card" style="text-align:center; padding: 1.5rem; cursor:default;">
-      <div style="font-size:0.85rem; color:var(--text2); margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.1em;">Signal de l'algorithme</div>
-      <div style="font-size:1.4rem; font-weight:800; margin-bottom:0.4rem;">Favoris : ${signalLabel}</div>
-      <div style="font-size:0.9rem; color:var(--text2);">Confiance : <strong>${confidence}%</strong></div>
-      <div style="display:flex; justify-content:center; gap:3px; margin-top:0.6rem;">${bars(confidence)}</div>
-      <div style="margin-top:1rem; padding:0.8rem; background:rgba(210,153,34,0.08); border:1px solid rgba(210,153,34,0.3); border-radius:8px; font-size:0.8rem; color:var(--yellow);">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-        Analyse basée sur les stats SofaScore uniquement. Le pari sportif comporte des risques.
-      </div>
-    </div>
-  `;
-
-  // Pie chart
-  setTimeout(() => {
-    const ctx = document.getElementById('betChart');
-    if (!ctx) return;
-    if (betChart) betChart.destroy();
-    betChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: [summary.home_team, 'Nul', summary.away_team],
-        datasets: [{
-          data: [home_pct, draw_pct, away_pct],
-          backgroundColor: ['#3fb950', '#d29922', '#f85149'],
-          borderWidth: 0,
-          hoverOffset: 6,
-        }],
-      },
-      options: {
-        responsive: true,
-        cutout: '65%',
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: { color: '#8b949e', font: { family: 'Inter', size: 12 } },
-          },
-          tooltip: {
-            callbacks: {
-              label: ctx => ` ${ctx.label}: ${ctx.parsed}%`,
-            },
-          },
-        },
-      },
-    });
-  }, 100);
-}
-
-// ── Render Incidents ──────────────────────────
+// ── Incidents ─────────────────────────────────
 function renderIncidents(incidents, summary) {
   const content = document.getElementById('incidents-content');
-
-  if (!incidents || incidents.length === 0) {
+  if (!incidents || !incidents.length) {
     content.innerHTML = '<div class="empty-state"><i class="fa-solid fa-bolt"></i><p>Aucun incident disponible</p></div>';
     return;
   }
 
-  const incidentTypes = {
-    goal: { icon: 'fa-futbol icon-goal', dot: 'goal', label: 'But' },
-    yellowCard: { icon: 'fa-square icon-yellow', dot: 'yellow-card', label: 'Carton jaune' },
-    redCard: { icon: 'fa-square icon-red', dot: 'red-card', label: 'Carton rouge' },
-    yellowRedCard: { icon: 'fa-square icon-red', dot: 'red-card', label: '2ème jaune' },
-    substitution: { icon: 'fa-right-left icon-sub', dot: 'substitution', label: 'Remplacement' },
-    varDecision: { icon: 'fa-tv', dot: '', label: 'VAR' },
-    penaltyMissed: { icon: 'fa-xmark icon-red', dot: 'red-card', label: 'Pénalty manqué' },
+  const typeMap = {
+    goal:          { icon: 'fa-futbol icon-goal',   dot: 'goal',         label: 'But' },
+    yellowCard:    { icon: 'fa-square icon-yellow',  dot: 'yellow-card',  label: 'Carton jaune' },
+    redCard:       { icon: 'fa-square icon-red',     dot: 'red-card',     label: 'Carton rouge' },
+    yellowRedCard: { icon: 'fa-square icon-red',     dot: 'red-card',     label: '2ème jaune' },
+    substitution:  { icon: 'fa-right-left icon-sub', dot: 'substitution', label: 'Remplacement' },
+    varDecision:   { icon: 'fa-tv',                  dot: '',             label: 'VAR' },
+    penaltyMissed: { icon: 'fa-xmark icon-red',      dot: 'red-card',     label: 'Pénalty manqué' },
   };
 
   const items = incidents
-    .filter(inc => inc.incidentType !== 'period')
+    .filter(i => i.incidentType !== 'period')
     .sort((a, b) => (a.time || 0) - (b.time || 0));
 
-  if (items.length === 0) {
-    content.innerHTML = '<div class="empty-state"><i class="fa-solid fa-bolt"></i><p>Aucun incident enregistré</p></div>';
-    return;
-  }
-
   const html = items.map(inc => {
-    const type = incidentTypes[inc.incidentType] || { icon: 'fa-circle', dot: '', label: inc.incidentType };
-    const isHome = inc.isHome;
-    const player = inc.player?.name || inc.playerName || '';
-    const addInfo = inc.addedTime ? `+${inc.addedTime}'` : '';
-    const teamName = isHome ? summary.home_team : summary.away_team;
-
+    const t    = typeMap[inc.incidentType] || { icon: 'fa-circle', dot: '', label: inc.incidentType };
+    const team = inc.isHome ? summary.home_team : summary.away_team;
+    const pl   = inc.player?.name || '';
+    const add  = inc.addedTime ? `+${inc.addedTime}'` : '';
     return `
       <div class="incident-item">
-        <div class="incident-dot ${type.dot}"></div>
+        <div class="incident-dot ${t.dot}"></div>
         <div class="incident-card">
-          <span class="incident-minute">${inc.time || '?'}'${addInfo}</span>
-          <i class="fa-solid ${type.icon} incident-icon"></i>
+          <span class="incident-minute">${inc.time || '?'}'${add}</span>
+          <i class="fa-solid ${t.icon} incident-icon"></i>
           <div class="incident-text">
-            <div class="incident-player">${player}</div>
-            <div class="incident-team">${teamName} · ${type.label}</div>
+            <div class="incident-player">${pl}</div>
+            <div class="incident-team">${team} · ${t.label}</div>
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 
   content.innerHTML = `<div class="incidents-timeline">${html}</div>`;
 }
 
-// ── Render H2H ────────────────────────────────
+// ── H2H ──────────────────────────────────────
 function renderH2H(h2h, summary) {
   const content = document.getElementById('h2h-content');
+  const events  = h2h?.events || h2h?.teamDuel?.events || [];
 
-  const events = h2h?.events || h2h?.teamDuel?.events || [];
-
-  if (events.length === 0) {
-    content.innerHTML = '<div class="empty-state"><i class="fa-solid fa-arrows-left-right"></i><p>Aucune confrontation directe disponible</p></div>';
+  if (!events.length) {
+    content.innerHTML = '<div class="empty-state"><i class="fa-solid fa-arrows-left-right"></i><p>Aucune confrontation disponible</p></div>';
     return;
   }
 
-  let homeWins = 0, awayWins = 0, draws = 0;
-
-  const matchHtml = events.slice(0, 10).map(e => {
+  let hw = 0, aw = 0, dr = 0;
+  const rows = events.slice(0, 10).map(e => {
     const hs = e.homeScore?.current ?? '-';
     const as = e.awayScore?.current ?? '-';
-    const d = new Date((e.startTimestamp || 0) * 1000);
-    const dateStr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-    if (hs > as) homeWins++;
-    else if (as > hs) awayWins++;
-    else if (hs === as && hs !== '-') draws++;
-
-    const homeTeam = e.homeTeam?.name || '?';
-    const awayTeam = e.awayTeam?.name || '?';
-
+    if (hs > as) hw++; else if (as > hs) aw++; else if (hs !== '-') dr++;
+    const dt = new Date((e.startTimestamp || 0) * 1000)
+      .toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });
     return `
       <div class="h2h-match">
-        <span class="h2h-home">${homeTeam}</span>
+        <span class="h2h-home">${e.homeTeam?.name || '?'}</span>
         <span class="h2h-score">${hs} – ${as}</span>
-        <span class="h2h-away">${awayTeam}</span>
-        <span class="h2h-date" style="grid-column:1/-1;text-align:center">${dateStr}</span>
-      </div>
-    `;
+        <span class="h2h-away">${e.awayTeam?.name || '?'}</span>
+        <span class="h2h-date" style="grid-column:1/-1;text-align:center">${dt}</span>
+      </div>`;
   }).join('');
 
   content.innerHTML = `
     <div class="h2h-summary">
       <div class="h2h-team-wins home">
-        <div style="font-size:0.8rem;color:var(--text2);margin-bottom:0.3rem">${summary.home_team}</div>
-        <div class="wins-num">${homeWins}</div>
-        <div style="font-size:0.8rem;color:var(--text2)">victoires</div>
+        <div style="font-size:.8rem;color:var(--text2);margin-bottom:.3rem">${summary.home_team}</div>
+        <div class="wins-num">${hw}</div>
+        <div style="font-size:.8rem;color:var(--text2)">victoires</div>
       </div>
       <div class="h2h-draws">
         <div class="draws-label">Nuls</div>
-        <div class="draws-num">${draws}</div>
+        <div class="draws-num">${dr}</div>
       </div>
       <div class="h2h-team-wins away">
-        <div style="font-size:0.8rem;color:var(--text2);margin-bottom:0.3rem">${summary.away_team}</div>
-        <div class="wins-num">${awayWins}</div>
-        <div style="font-size:0.8rem;color:var(--text2)">victoires</div>
+        <div style="font-size:.8rem;color:var(--text2);margin-bottom:.3rem">${summary.away_team}</div>
+        <div class="wins-num">${aw}</div>
+        <div style="font-size:.8rem;color:var(--text2)">victoires</div>
       </div>
     </div>
-    <div class="h2h-list">${matchHtml}</div>
-  `;
+    <div class="h2h-list">${rows}</div>`;
 }
 
-// ── Load Lineups ──────────────────────────────
+// ── Lineups ───────────────────────────────────
 async function loadLineups(eventId) {
   try {
-    const res = await fetch(`/api/match/${eventId}/lineups`);
+    const res  = await fetch(`/api/match/${eventId}/lineups`);
     const data = await res.json();
     renderLineups(data);
   } catch {
     document.getElementById('lineups-content').innerHTML =
-      '<div class="empty-state"><i class="fa-solid fa-users"></i><p>Compositions non disponibles</p></div>';
+      '<div class="empty-state"><i class="fa-solid fa-users"></i><p>Compositions indisponibles</p></div>';
   }
 }
 
 function renderLineups(data) {
   const content = document.getElementById('lineups-content');
-
-  const home = data.home;
-  const away = data.away;
-
+  const home = data.home, away = data.away;
   if (!home && !away) {
-    content.innerHTML = '<div class="empty-state"><i class="fa-solid fa-users"></i><p>Compositions non disponibles</p></div>';
+    content.innerHTML = '<div class="empty-state"><i class="fa-solid fa-users"></i><p>Compositions indisponibles</p></div>';
     return;
   }
 
-  const renderTeam = (team, side) => {
-    if (!team) return `<div class="lineup-team"><div class="lineup-header">Composition non disponible</div></div>`;
-
-    const players = team.players || [];
-    const starters = players.filter(p => !p.substitute);
-    const subs = players.filter(p => p.substitute);
-
-    const playerHtml = (p) => `
+  const renderTeam = team => {
+    if (!team) return `<div class="lineup-team"><div class="lineup-header">Indisponible</div></div>`;
+    const starters = (team.players || []).filter(p => !p.substitute);
+    const subs     = (team.players || []).filter(p => p.substitute);
+    const pl = p => `
       <div class="player-item">
-        <span class="player-number">${p.player?.jerseyNumber || p.jerseyNumber || '#'}</span>
-        <span class="player-name">${p.player?.name || p.name || ''}</span>
+        <span class="player-number">${p.player?.jerseyNumber || '#'}</span>
+        <span class="player-name">${p.player?.name || ''}</span>
         <span class="player-pos">${p.position || ''}</span>
-      </div>
-    `;
-
+      </div>`;
     return `
       <div class="lineup-team">
         <div class="lineup-header">
-          <span>${team.name || side}</span>
+          <span>${team.name || ''}</span>
           <span class="lineup-formation">${team.formation || ''}</span>
         </div>
         <div class="lineup-players">
-          ${starters.map(playerHtml).join('')}
-          ${subs.length ? `<div class="substitutes-title">Remplaçants</div>${subs.map(playerHtml).join('')}` : ''}
+          ${starters.map(pl).join('')}
+          ${subs.length ? `<div class="substitutes-title">Remplaçants</div>${subs.map(pl).join('')}` : ''}
         </div>
-      </div>
-    `;
+      </div>`;
   };
 
-  content.innerHTML = `
-    <div class="lineups-container">
-      ${renderTeam(home, 'Domicile')}
-      ${renderTeam(away, 'Extérieur')}
-    </div>
-  `;
+  content.innerHTML = `<div class="lineups-container">${renderTeam(home)}${renderTeam(away)}</div>`;
 }
 
-// ── Tab Switching ─────────────────────────────
+// ── Tab switching ─────────────────────────────
 function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-content').forEach(c => {
-    c.classList.toggle('active', c.id === `tab-${name}`);
-    c.style.display = c.id === `tab-${name}` ? 'block' : 'none';
+    const active = c.id === `tab-${name}`;
+    c.classList.toggle('active', active);
+    c.style.display = active ? 'block' : 'none';
   });
 }
 
 // ── Utils ─────────────────────────────────────
 function formatDateTime(ts) {
   if (!ts) return '';
-  const d = new Date(ts * 1000);
-  return d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return new Date(ts * 1000).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
 }
