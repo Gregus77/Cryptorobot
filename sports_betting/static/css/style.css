@@ -328,6 +328,80 @@ a:hover { text-decoration: underline; }
 .strip-yellow { background: var(--yellow-bg); color: var(--yellow); border-color: rgba(210,153,34,.3); }
 .strip-blue   { background: rgba(88,166,255,.1); color: var(--accent); border-color: rgba(88,166,255,.3); }
 
+/* ── Date Nav ── */
+.date-nav {
+  display: flex; align-items: center; gap: .5rem;
+  margin-bottom: 2rem; overflow: hidden;
+}
+
+.date-nav-arrow {
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); width: 34px; height: 34px; min-width: 34px;
+  border-radius: 8px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; transition: var(--t);
+}
+.date-nav-arrow:hover { color: var(--accent); border-color: var(--accent); }
+
+.date-slots {
+  display: flex; gap: .4rem; overflow-x: auto;
+  scrollbar-width: none; flex: 1;
+}
+.date-slots::-webkit-scrollbar { display: none; }
+
+.date-slot {
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2); padding: .4rem .75rem; border-radius: 10px;
+  cursor: pointer; font-size: .82rem; font-family: inherit;
+  transition: var(--t); display: flex; flex-direction: column;
+  align-items: center; gap: .1rem; min-width: 58px; white-space: nowrap;
+}
+.date-slot .ds-day { font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; }
+.date-slot .ds-num { font-weight: 700; font-size: .88rem; }
+.date-slot.active { background: var(--accent2); border-color: var(--accent); color: #fff; }
+.date-slot.today { border-color: var(--yellow); }
+.date-slot.today.active { background: var(--accent2); }
+.date-slot.no-match { opacity: .45; }
+
+/* ── Source badge ── */
+.source-badge {
+  font-size: .75rem; padding: .15rem .55rem; border-radius: 8px;
+  display: flex; align-items: center; gap: .3rem;
+}
+.source-badge.real { background: var(--green-bg); color: var(--green); }
+.source-badge.demo { background: var(--yellow-bg); color: var(--yellow); }
+
+/* ── Pick cards — team row ── */
+.pick-vs-row {
+  display: flex; align-items: flex-start; gap: .5rem;
+  padding: 0 1rem .8rem;
+}
+.pick-team-col {
+  flex: 1; display: flex; flex-direction: column; gap: .2rem;
+}
+.pick-team-col.right { text-align: right; }
+.pick-team-name { font-size: .85rem; font-weight: 700; line-height: 1.2; }
+.pick-separator { color: var(--text2); font-weight: 800; font-size: .8rem; padding-top: .2rem; }
+.pick-form { display: flex; gap: .2rem; flex-wrap: wrap; }
+.pick-team-col.right .pick-form { justify-content: flex-end; }
+.pick-team-stat { font-size: .72rem; color: var(--text2); }
+
+/* Form result dots */
+.fd-w { color: var(--green); font-weight: 800; font-size: .8rem; }
+.fd-d { color: var(--yellow); font-weight: 800; font-size: .8rem; }
+.fd-l { color: var(--red); font-weight: 800; font-size: .8rem; }
+
+/* ── Multi-stats row on pick card ── */
+.pick-multi-stats {
+  display: flex; border-top: 1px solid var(--border);
+  padding: .5rem 1rem; gap: .5rem; flex-wrap: wrap;
+}
+.ms2 {
+  display: flex; flex-direction: column; align-items: center; gap: .05rem;
+  flex: 1; min-width: 48px;
+}
+.ms2 span { font-size: .65rem; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; }
+.ms2 strong { font-size: .9rem; font-weight: 700; }
+
 /* ── Live dot ── */
 .live-dot {
   width: 10px; height: 10px; background: var(--live);
