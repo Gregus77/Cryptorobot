@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}BetScore — Paris du Jour{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h1><i class="fa-solid fa-crosshairs accent-icon"></i> Paris du Jour</h1>
+  <p class="subtitle">
+    Données réelles · 7 ligues · Loi de Poisson ·
+    Sélection automatique BTTS &amp; Over/Under
+  </p>
+</div>
+
+<!-- ── Date picker ── -->
+<div class="date-nav" id="date-nav">
+  <button class="date-nav-arrow" id="date-prev"><i class="fa-solid fa-chevron-left"></i></button>
+  <div class="date-slots" id="date-slots">
+    <div class="loading-card" style="padding:.5rem 2rem"><i class="fa-solid fa-spinner fa-spin"></i></div>
+  </div>
+  <button class="date-nav-arrow" id="date-next"><i class="fa-solid fa-chevron-right"></i></button>
+</div>
+
+<!-- ═══ PICKS ═══ -->
+<section class="section picks-section">
+  <div class="section-header">
+    <i class="fa-solid fa-fire accent-icon"></i>
+    <h2>Meilleurs Paris</h2>
+    <span class="badge badge-picks" id="picks-count">—</span>
+    <span class="source-badge" id="source-badge"></span>
+    <button class="refresh-btn" id="refresh-picks"><i class="fa-solid fa-rotate"></i></button>
+  </div>
+  <p class="section-desc">
+    Score calculé sur les <strong>10 derniers matchs</strong> de chaque équipe :
+    buts marqués/encaissés · taux Over 2.5 · taux BTTS · <strong>loi de Poisson</strong>.
+    Seuil minimum : <strong>60 %</strong>.
+  </p>
+  <div id="picks-container">
+    <div class="picks-loading">
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      <span>Chargement des données réelles…</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ALL MATCHES ═══ -->
+<section class="section">
+  <div class="section-header">
+    <i class="fa-solid fa-calendar-days accent-icon"></i>
+    <h2>Tous les Matchs</h2>
+    <span class="badge" id="scheduled-count">0</span>
+  </div>
+  <div class="tournament-filter" id="tournament-filter"></div>
+  <div class="matches-grid" id="scheduled-matches">
+    <div class="loading-card"><i class="fa-solid fa-spinner fa-spin"></i></div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}

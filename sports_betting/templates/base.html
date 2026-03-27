@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}BetScore — Analyse Sofascore{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-brand">
+    <i class="fa-solid fa-futbol spin-icon"></i>
+    <span>Bet<strong>Score</strong></span>
+  </div>
+  <div class="nav-sports" id="nav-sports">
+    <button class="sport-btn active" data-sport="football"><i class="fa-solid fa-futbol"></i> Football</button>
+    <button class="sport-btn" data-sport="basketball"><i class="fa-solid fa-basketball"></i> Basket</button>
+    <button class="sport-btn" data-sport="tennis"><i class="fa-solid fa-baseball-bat-ball"></i> Tennis</button>
+    <button class="sport-btn" data-sport="ice-hockey"><i class="fa-solid fa-hockey-puck"></i> Hockey</button>
+  </div>
+  <div class="nav-actions">
+    <button class="btn-icon" id="theme-toggle" title="Changer le thème">
+      <i class="fa-solid fa-moon"></i>
+    </button>
+  </div>
+</nav>
+
+<main class="main-container">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <p>Données fournies par <strong>SofaScore</strong> · BetScore © 2026 · Usage éducatif uniquement</p>
+</footer>
+
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
