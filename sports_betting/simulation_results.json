@@ -1,0 +1,14 @@
+{
+  "config": {
+    "bankroll_initiale": 200.0,
+    "mise_pct": 0.04,
+    "jours": 30,
+    "seuil_confiance": 0.6
+  },
+  "stats": {
+    "roi_moyen": 35.18,
+    "bankroll_moyenne": 270.36,
+    "win_rate_moyen": 0.665,
+    "pct_simulations_positives": 86.9
+  }
+}
