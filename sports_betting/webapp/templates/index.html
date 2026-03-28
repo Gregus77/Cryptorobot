@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BetSmart — Analyse Paris Sportifs</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* ── Reset & Variables ────────────────────────────── */
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --card:     #1c2333;
+      --border:   #30363d;
+      --accent:   #58a6ff;
+      --green:    #3fb950;
+      --orange:   #d29922;
+      --red:      #f85149;
+      --purple:   #bc8cff;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --radius:   14px;
+      --shadow:   0 4px 24px rgba(0,0,0,.45);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Layout ───────────────────────────────────────── */
+    .header {
+      background: linear-gradient(135deg, #1a2744 0%, #0d1117 60%);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -.3px;
+    }
+    .logo-icon {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, #58a6ff, #bc8cff);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .last-update {
+      font-size: .78rem;
+      color: var(--muted);
+    }
+    .refresh-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      padding: 7px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: .85rem;
+      transition: all .2s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .refresh-btn:hover { background: #21284a; border-color: var(--accent); }
+    .refresh-btn.loading svg { animation: spin .8s linear infinite; }
+
+    main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
+
+    /* ── Bankroll Panel ───────────────────────────────── */
+    .bankroll-panel {
+      background: linear-gradient(135deg, #1a2744 0%, #1c2333 100%);
+      border: 1px solid #2d4a7a;
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      flex-wrap: wrap;
+      box-shadow: var(--shadow);
+    }
+    .bankroll-left { flex: 1; min-width: 220px; }
+    .bankroll-label {
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .bankroll-input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .bankroll-input-row .currency {
+      font-size: 1.6rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    #bankrollInput {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      color: var(--text);
+      font-size: 1.8rem;
+      font-weight: 700;
+      width: 180px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    #bankrollInput:focus { border-color: var(--accent); }
+
+    .months-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .months-row label { font-size: .82rem; color: var(--muted); }
+    .month-btn {
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: .82rem;
+      transition: all .2s;
+    }
+    .month-btn.active, .month-btn:hover {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .calc-btn {
+      background: linear-gradient(135deg, #58a6ff, #bc8cff);
+      border: none;
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .25s;
+      box-shadow: 0 4px 16px rgba(88,166,255,.3);
+      white-space: nowrap;
+    }
+    .calc-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(88,166,255,.4); }
+
+    /* Stats rapides bankroll */
+    .bankroll-stats {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .bstat {
+      text-align: center;
+      min-width: 100px;
+    }
+    .bstat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--green);
+    }
+    .bstat-value.negative { color: var(--red); }
+    .bstat-label {
+      font-size: .72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-top: 2px;
+    }
+
+    /* ── Grid ─────────────────────────────────────────── */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ── Card ─────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+    .card-title {
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title span { color: var(--text); font-size: 1rem; }
+
+    /* ── Projection Chart ─────────────────────────────── */
+    .chart-wrap { position: relative; height: 300px; }
+
+    /* ── KPI Strip ────────────────────────────────────── */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .kpi {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      transition: transform .2s;
+    }
+    .kpi:hover { transform: translateY(-3px); }
+    .kpi-value {
+      font-size: 1.9rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .kpi-value.green  { color: var(--green); }
+    .kpi-value.blue   { color: var(--accent); }
+    .kpi-value.orange { color: var(--orange); }
+    .kpi-value.purple { color: var(--purple); }
+    .kpi-label {
+      font-size: .73rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-top: 6px;
+    }
+
+    /* ── Matches List ─────────────────────────────────── */
+    .matches-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .matches-count {
+      font-size: .78rem;
+      color: var(--muted);
+      background: var(--surface);
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+    .match-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all .2s;
+      cursor: default;
+    }
+    .match-card:hover {
+      border-color: var(--accent);
+      background: #1a2030;
+      transform: translateX(3px);
+    }
+    .match-card.fort  { border-left: 3px solid var(--green); }
+    .match-card.moyen { border-left: 3px solid var(--orange); }
+    .match-card.faible { border-left: 3px solid var(--muted); }
+
+    .match-time {
+      font-size: .8rem;
+      color: var(--muted);
+      min-width: 42px;
+      text-align: center;
+    }
+    .match-main { flex: 1; min-width: 0; }
+    .match-name {
+      font-size: .9rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .match-league {
+      font-size: .73rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .match-bet {
+      text-align: right;
+    }
+    .bet-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: .75rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .bet-tag.over { background: rgba(63,185,80,.15); color: var(--green); border: 1px solid rgba(63,185,80,.3); }
+    .bet-tag.btts { background: rgba(88,166,255,.15); color: var(--accent); border: 1px solid rgba(88,166,255,.3); }
+    .bet-tag.result { background: rgba(188,140,255,.15); color: var(--purple); border: 1px solid rgba(188,140,255,.3); }
+
+    .confidence-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 3px;
+    }
+    .conf-bar-bg {
+      flex: 1;
+      height: 5px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      max-width: 80px;
+    }
+    .conf-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width .6s ease;
+    }
+    .conf-bar-fill.fort  { background: var(--green); }
+    .conf-bar-fill.moyen { background: var(--orange); }
+    .conf-bar-fill.faible { background: var(--muted); }
+    .conf-pct {
+      font-size: .72rem;
+      color: var(--muted);
+      min-width: 30px;
+      text-align: right;
+    }
+    .cote-badge {
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--orange);
+      min-width: 36px;
+      text-align: center;
+    }
+
+    /* ── Leagues Stats ────────────────────────────────── */
+    .league-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .league-row:last-child { border-bottom: none; }
+    .league-name { flex: 1; font-size: .88rem; font-weight: 500; }
+    .league-stat-bar {
+      width: 90px;
+      height: 7px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .league-stat-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+    }
+    .league-pct {
+      font-size: .8rem;
+      font-weight: 600;
+      min-width: 36px;
+      text-align: right;
+      color: var(--accent);
+    }
+    .league-avg {
+      font-size: .75rem;
+      color: var(--muted);
+      min-width: 52px;
+      text-align: right;
+    }
+
+    /* ── Loading ──────────────────────────────────────── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface) 25%, var(--card) 50%, var(--surface) 75%);
+      background-size: 400% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 8px;
+      height: 68px;
+      margin-bottom: 10px;
+    }
+    @keyframes shimmer { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+    .source-badge {
+      font-size: .7rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 8px;
+    }
+    .source-badge.live   { background: rgba(63,185,80,.2); color: var(--green); border: 1px solid rgba(63,185,80,.4); }
+    .source-badge.demo   { background: rgba(210,153,34,.2); color: var(--orange); border: 1px solid rgba(210,153,34,.4); }
+
+    /* ── Responsive ───────────────────────────────────── */
+    @media (max-width: 600px) {
+      .header { padding: 14px 16px; }
+      main { padding: 16px 12px; }
+      .bankroll-panel { padding: 20px 16px; gap: 20px; }
+      #bankrollInput { width: 130px; font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    BetSmart
+  </div>
+  <div class="header-right">
+    <span class="last-update" id="lastUpdate">Chargement...</span>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadAll()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M1 4v6h6M23 20v-6h-6"/>
+        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+      </svg>
+      Actualiser
+    </button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── Bankroll Panel ──────────────────────────────────────────── -->
+  <div class="bankroll-panel">
+    <div class="bankroll-left">
+      <div class="bankroll-label">Votre Bankroll</div>
+      <div class="bankroll-input-row">
+        <span class="currency">€</span>
+        <input type="number" id="bankrollInput" value="200" min="10" max="1000000" />
+      </div>
+      <div class="months-row">
+        <label>Projection :</label>
+        <button class="month-btn" data-m="1">1 mois</button>
+        <button class="month-btn active" data-m="3">3 mois</button>
+        <button class="month-btn" data-m="6">6 mois</button>
+        <button class="month-btn" data-m="12">12 mois</button>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="loadProjection()">
+      📈 Calculer la projection
+    </button>
+    <div class="bankroll-stats" id="projStats">
+      <div class="bstat"><div class="bstat-value" id="statGain">—</div><div class="bstat-label">Gain median</div></div>
+      <div class="bstat"><div class="bstat-value" id="statROI">—</div><div class="bstat-label">ROI moyen</div></div>
+      <div class="bstat"><div class="bstat-value" id="statPos">—</div><div class="bstat-label">% rentable</div></div>
+    </div>
+  </div>
+
+  <!-- ── KPI Strip ───────────────────────────────────────────────── -->
+  <div class="kpi-strip">
+    <div class="kpi">
+      <div class="kpi-value green" id="kpiWinRate">63.5%</div>
+      <div class="kpi-label">Win Rate</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-value blue" id="kpiROI">+35.2%</div>
+      <div class="kpi-label">ROI / mois</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-value orange" id="kpiCote">1.72</div>
+      <div class="kpi-label">Cote moy.</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-value purple" id="kpiParis">60</div>
+      <div class="kpi-label">Paris / mois</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-value green" id="kpiRentable">86.9%</div>
+      <div class="kpi-label">Simul. > 0</div>
+    </div>
+  </div>
+
+  <!-- ── Projection Chart + Leagues ─────────────────────────────── -->
+  <div class="grid-2" style="margin-bottom:28px">
+    <div class="card">
+      <div class="card-title">📈 <span>Projection Bankroll</span></div>
+      <div class="chart-wrap">
+        <canvas id="projChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🏆 <span>Over 2.5 par ligue</span></div>
+      <div id="leagueStats"></div>
+    </div>
+  </div>
+
+  <!-- ── Matches of the Day ──────────────────────────────────────── -->
+  <div class="card">
+    <div class="matches-header">
+      <div class="card-title" style="margin-bottom:0">
+        ⚽ <span>Paris conseillés aujourd'hui</span>
+        <span class="source-badge" id="sourceBadge"></span>
+      </div>
+      <span class="matches-count" id="matchesCount">...</span>
+    </div>
+    <div id="matchesList"></div>
+  </div>
+
+</main>
+
+<script>
+// ── State ────────────────────────────────────────────────────────
+let projChart = null;
+let selectedMonths = 3;
+
+// ── Month buttons ────────────────────────────────────────────────
+document.querySelectorAll('.month-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.month-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedMonths = parseInt(btn.dataset.m);
+  });
+});
+
+// ── Load all ─────────────────────────────────────────────────────
+function loadAll() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('loading');
+  Promise.all([loadMatches(), loadStats(), loadProjection()])
+    .finally(() => btn.classList.remove('loading'));
+}
+
+// ── Load matches ─────────────────────────────────────────────────
+async function loadMatches() {
+  const list = document.getElementById('matchesList');
+  list.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton" style="height:54px"></div>';
+
+  try {
+    const res = await fetch('/api/matches');
+    const data = await res.json();
+
+    document.getElementById('lastUpdate').textContent = 'Mis à jour : ' + data.date;
+    document.getElementById('matchesCount').textContent = data.total + ' matchs';
+
+    const badge = document.getElementById('sourceBadge');
+    if (data.source === 'sofascore') {
+      badge.textContent = '🟢 LIVE';
+      badge.className = 'source-badge live';
+    } else {
+      badge.textContent = '🟡 Démo';
+      badge.className = 'source-badge demo';
+    }
+
+    if (!data.matches.length) {
+      list.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px">Aucun match disponible pour aujourd\'hui.</p>';
+      return;
+    }
+
+    list.innerHTML = data.matches.map(m => renderMatch(m)).join('');
+  } catch (e) {
+    list.innerHTML = '<p style="color:var(--red);padding:16px">Erreur de chargement.</p>';
+  }
+}
+
+function renderMatch(m) {
+  const labelClass = m.label.toLowerCase();
+  const betClass   = m.bet.includes('Over') ? 'over' : m.bet.includes('BTTS') ? 'btts' : 'result';
+  const pct        = Math.round(m.confidence * 100);
+  const fillW      = Math.max(10, Math.min(100, pct));
+
+  return `
+    <div class="match-card ${labelClass}">
+      <div class="match-time">${m.date}</div>
+      <div class="match-main">
+        <div class="match-name">${m.match}</div>
+        <div class="match-league">${m.league}</div>
+      </div>
+      <div style="text-align:center;min-width:70px">
+        <div style="font-size:.7rem;color:var(--muted)">Over 2.5</div>
+        <div style="font-size:.9rem;font-weight:700;color:var(--green)">${m.over25}%</div>
+      </div>
+      <div style="text-align:center;min-width:55px">
+        <div style="font-size:.7rem;color:var(--muted)">xButs</div>
+        <div style="font-size:.9rem;font-weight:700;color:var(--accent)">${m.avg_goals}</div>
+      </div>
+      <div class="match-bet">
+        <div class="bet-tag ${betClass}">${m.bet}</div>
+        <div class="confidence-row">
+          <div class="conf-bar-bg">
+            <div class="conf-bar-fill ${labelClass}" style="width:${fillW}%"></div>
+          </div>
+          <span class="conf-pct">${pct}%</span>
+        </div>
+      </div>
+      <div class="cote-badge">@${m.cote.toFixed(2)}</div>
+    </div>`;
+}
+
+// ── Load stats ───────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const res  = await fetch('/api/stats');
+    const data = await res.json();
+
+    document.getElementById('kpiWinRate').textContent  = data.win_rate + '%';
+    document.getElementById('kpiROI').textContent      = '+' + data.roi_mensuel + '%';
+    document.getElementById('kpiCote').textContent     = data.cote_moyenne;
+    document.getElementById('kpiParis').textContent    = data.paris_par_mois;
+    document.getElementById('kpiRentable').textContent = data.pct_rentable + '%';
+
+    const leagueDiv = document.getElementById('leagueStats');
+    leagueDiv.innerHTML = data.leagues.map(l => `
+      <div class="league-row">
+        <div class="league-name">${l.name}</div>
+        <div class="league-stat-bar">
+          <div class="league-stat-fill" style="width:${l.over25}%"></div>
+        </div>
+        <div class="league-pct">${l.over25}%</div>
+        <div class="league-avg">${l.avg} b/m</div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+// ── Load projection ──────────────────────────────────────────────
+async function loadProjection() {
+  const bankroll = parseFloat(document.getElementById('bankrollInput').value) || 200;
+  const months   = selectedMonths;
+
+  // Affiche loader sur les stats
+  ['statGain','statROI','statPos'].forEach(id => {
+    document.getElementById(id).textContent = '...';
+  });
+
+  try {
+    const res  = await fetch(`/api/projection?bankroll=${bankroll}&months=${months}`);
+    const data = await res.json();
+
+    // Stats rapides
+    const gainEl = document.getElementById('statGain');
+    gainEl.textContent = (data.gain_median >= 0 ? '+' : '') + data.gain_median.toFixed(0) + '€';
+    gainEl.className   = 'bstat-value ' + (data.gain_median >= 0 ? '' : 'negative');
+
+    document.getElementById('statROI').textContent = (data.roi_moyen >= 0 ? '+' : '') + data.roi_moyen + '%';
+    document.getElementById('statPos').textContent = data.pct_positif + '%';
+
+    drawProjectionChart(data);
+  } catch(e) {
+    ['statGain','statROI','statPos'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+    });
+  }
+}
+
+// ── Draw projection chart ────────────────────────────────────────
+function drawProjectionChart(data) {
+  const ctx = document.getElementById('projChart').getContext('2d');
+  if (projChart) projChart.destroy();
+
+  projChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: [
+        {
+          label: 'Meilleur 10%',
+          data: data.p90,
+          borderColor: 'rgba(63,185,80,0.5)',
+          backgroundColor: 'rgba(63,185,80,0.08)',
+          borderDash: [4,3],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.4,
+        },
+        {
+          label: 'Médiane (50%)',
+          data: data.p50,
+          borderColor: '#58a6ff',
+          backgroundColor: 'rgba(88,166,255,0.12)',
+          borderWidth: 3,
+          pointRadius: 0,
+          fill: '+1',
+          tension: 0.4,
+        },
+        {
+          label: 'Pire 10%',
+          data: data.p10,
+          borderColor: 'rgba(248,81,73,0.45)',
+          backgroundColor: 'rgba(248,81,73,0.06)',
+          borderDash: [4,3],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.4,
+        },
+        {
+          label: 'Bankroll initiale',
+          data: Array(data.labels.length).fill(data.bankroll_init),
+          borderColor: 'rgba(139,148,158,0.35)',
+          borderDash: [6,4],
+          borderWidth: 1,
+          pointRadius: 0,
+          fill: false,
+        },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          labels: { color: '#8b949e', font: { size: 11 }, boxWidth: 20 }
+        },
+        tooltip: {
+          backgroundColor: '#1c2333',
+          borderColor: '#30363d',
+          borderWidth: 1,
+          titleColor: '#e6edf3',
+          bodyColor: '#8b949e',
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(0)}€`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#8b949e',
+            maxTicksLimit: 8,
+            font: { size: 10 }
+          },
+          grid: { color: 'rgba(48,54,61,0.5)' }
+        },
+        y: {
+          ticks: {
+            color: '#8b949e',
+            font: { size: 10 },
+            callback: v => v.toFixed(0) + '€'
+          },
+          grid: { color: 'rgba(48,54,61,0.5)' }
+        }
+      }
+    }
+  });
+}
+
+// ── Init ─────────────────────────────────────────────────────────
+loadAll();
+</script>
+
+</body>
+</html>
