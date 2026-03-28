@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from flask import Flask, jsonify, render_template, request
 
 # Ajoute le dossier parent au path pour importer nos modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 try:
     from sofascore_api import get_scheduled_events, get_multi_day_events, extract_match_info
