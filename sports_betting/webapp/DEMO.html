@@ -173,22 +173,22 @@ main{max-width:960px;margin:0 auto;padding:20px 16px}
 <!-- PICK DU JOUR -->
 <div class="pick-label">Pick du Jour</div>
 <div class="pick-box has-pick" id="pickBox">
-  <div class="pick-match" id="pickMatch">🇧🇷 Fluminense vs São Paulo</div>
+  <div class="pick-match" id="pickMatch">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Arsenal vs Burnley</div>
   <div class="pick-meta">
-    <span>⚽ Brasileirão Série A</span>
-    <span>📅 18 Mai 2026 · 19h00</span>
-    <span>🏟️ Maracanã, Rio</span>
+    <span>⚽ Premier League</span>
+    <span>📅 18 Mai 2026 · 21h00</span>
+    <span>🏟️ Emirates Stadium, Londres</span>
   </div>
   <div class="pick-bets">
     <div class="pick-bet">
-      <div class="pb-score">8.5<span style="font-size:.55rem;color:var(--muted)">/10</span></div>
+      <div class="pb-score">8.0<span style="font-size:.55rem;color:var(--muted)">/10</span></div>
       <div class="pb-info">
-        <div class="pb-type">✅ Victoire Fluminense + Plus de 1.5 buts</div>
-        <div class="pb-cote">Cote @ 2.30 · Combiné · Confiance 80%</div>
+        <div class="pb-type">✅ Victoire Arsenal + Plus de 2.5 buts</div>
+        <div class="pb-cote">Cote @ 1.65 · Combiné · Confiance 75%</div>
       </div>
     </div>
   </div>
-  <div class="score-bar"><span class="score-label">Flu gagne + 1.5</span><div class="score-track"><div class="score-fill" style="width:80%"></div></div><span class="score-num">8.5/10</span></div>
+  <div class="score-bar"><span class="score-label">Arsenal + 2.5</span><div class="score-track"><div class="score-fill" style="width:75%"></div></div><span class="score-num">8.0/10</span></div>
 </div>
 
 <!-- STATS -->
@@ -280,7 +280,7 @@ main{max-width:960px;margin:0 auto;padding:20px 16px}
 <script>
 // ── DONNÉES ──────────────────────────────────────────
 const PICKS = [
-  {sport:'foot', icon:'⚽', match:'Fluminense vs São Paulo',  league:'🇧🇷 Brasileirão', time:'19:00', type:'Flu gagne + 1.5 buts', score:8.5, cote:2.30, label:'fort',  badge:'⭐ VEDETTE'},
+  {sport:'foot', icon:'⚽', match:'Arsenal vs Burnley',       league:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League', time:'21:00', type:'Arsenal + Over 2.5', score:8.0, cote:1.65, label:'fort',  badge:'⭐ VEDETTE'},
   {sport:'foot', icon:'⚽', match:'Bayern vs Dortmund',       league:'🇩🇪 Bundesliga',  time:'20:30', type:'Over 2.5',           score:7.8, cote:1.65, label:'fort',  badge:'🔥 EN FEU'},
   {sport:'foot', icon:'⚽', match:'Ajax vs PSV',              league:'🇳🇱 Eredivisie',  time:'18:45', type:'Over 2.5',           score:7.5, cote:1.63, label:'fort',  badge:'🔥 EN FEU'},
   {sport:'foot', icon:'⚽', match:'Man City vs Arsenal',      league:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League',time:'17:30',type:'Over 2.5', score:7.2, cote:1.68, label:'fort',  badge:'⚡ VALEUR'},
@@ -292,7 +292,7 @@ const PICKS = [
 
 const HISTORY = [
   {date:'17/05', sport:'foot', icon:'⚽', match:'PAS DE PARI',       type:'—',           cote:'—',   score:'—',  result:'none'},
-  {date:'18/05', sport:'foot', icon:'⚽', match:'Fluminense vs SPaulo',type:'Victoire Flu + 1.5',cote:'1.80',score:'8.2',result:'pending'},
+  {date:'18/05', sport:'foot', icon:'⚽', match:'Arsenal vs Burnley',  type:'Arsenal + Over 2.5', cote:'1.65',score:'8.0',result:'pending'},
   {date:'13/05', sport:'foot', icon:'⚽', match:'Lazio vs Inter Milan',type:'Inter ML',    cote:'1.66',score:'7.8',result:'win',  score_result:'0-2'},
   {date:'13/05', sport:'foot', icon:'⚽', match:'Villarreal vs Séville',type:'Over 2.5',  cote:'1.75',score:'7.2',result:'win',  score_result:'2-2'},
   {date:'11/05', sport:'foot', icon:'⚽', match:'Man City vs Brighton', type:'Over 2.5',  cote:'1.68',score:'7.5',result:'win',  score_result:'3-1'},
