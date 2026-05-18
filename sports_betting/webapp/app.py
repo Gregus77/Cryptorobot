@@ -62,7 +62,7 @@ LEAGUE_STATS = {
 
 SAMPLE_MATCHES = [
     # ⭐ MATCH VEDETTE — analyse réelle Brasileirao
-    {"match": "Fluminense vs São Paulo",            "league": "Brasileirão",   "date": "19:00", "bet": "Flu gagne + Plus de 1.5 buts", "confidence": 0.80, "cote": 1.80, "label": "FORT",  "badge": "⭐ VEDETTE", "over25": 62.0, "btts": 58.0, "avg_goals": 3.0},
+    {"match": "Fluminense vs São Paulo",            "league": "Brasileirão",   "date": "19:00", "bet": "Flu gagne + Plus de 1.5 buts", "confidence": 0.80, "cote": 2.30, "label": "FORT",  "badge": "⭐ VEDETTE", "over25": 62.0, "btts": 58.0, "avg_goals": 3.0},
     {"match": "Bayern Munich vs Borussia Dortmund", "league": "Bundesliga",    "date": "20:30", "bet": "Over 2.5",           "confidence": 0.74, "cote": 1.65, "label": "FORT",  "badge": "🔥 EN FEU", "over25": 71.0, "btts": 65.0, "avg_goals": 2.75},
     {"match": "Man City vs Arsenal",                "league": "Premier League","date": "17:30", "bet": "Over 2.5",           "confidence": 0.70, "cote": 1.68, "label": "FORT",  "badge": "⚡ VALEUR", "over25": 68.0, "btts": 62.0, "avg_goals": 2.93},
     {"match": "PSG vs Marseille",                   "league": "Ligue 1",       "date": "21:00", "bet": "BTTS Oui",           "confidence": 0.66, "cote": 1.80, "label": "FORT",  "badge": "🔥 EN FEU", "over25": 63.0, "btts": 60.0, "avg_goals": 2.60},
@@ -273,8 +273,17 @@ def api_matches():
             m_copy["avg_goals"] = LEAGUE_STATS.get(m["league"], LEAGUE_STATS["default"])["avg_goals"]
             results.append(m_copy)
 
-    # Trie par confiance
+    # Toujours mettre le pick vedette en premier (pick du jour manuel)
+    featured = dict(SAMPLE_MATCHES[0])
+    featured["league"] = f"{LEAGUE_FLAGS.get(SAMPLE_MATCHES[0]['league'], '⚽')} {SAMPLE_MATCHES[0]['league']}"
+    featured["league_raw"] = SAMPLE_MATCHES[0]["league"]
+    featured["over25"] = SAMPLE_MATCHES[0].get("over25", 62.0)
+    featured["btts"] = SAMPLE_MATCHES[0].get("btts", 58.0)
+    featured["avg_goals"] = SAMPLE_MATCHES[0].get("avg_goals", 3.0)
+    # Retire si déjà présent (évite doublon), puis insère en tête
+    results = [r for r in results if r.get("match") != featured["match"]]
     results.sort(key=lambda x: x["confidence"], reverse=True)
+    results.insert(0, featured)
 
     return jsonify({
         "matches": results,
