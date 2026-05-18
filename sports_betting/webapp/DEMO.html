@@ -156,7 +156,8 @@ main{max-width:1300px;margin:0 auto;padding:24px 20px}
   </div>
   <div class="header-right">
     <span id="clock"></span>
-    <span style="background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3);padding:3px 10px;border-radius:20px;font-size:.7rem">🟢 DÉMO ACTIVE</span>
+    <span id="sourceBadge" style="display:none;background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3);padding:3px 10px;border-radius:20px;font-size:.7rem">🟢 SofaScore LIVE</span>
+    <span id="demoBadge" style="background:rgba(210,153,34,.15);color:var(--orange);border:1px solid rgba(210,153,34,.3);padding:3px 10px;border-radius:20px;font-size:.7rem">🟡 DÉMO</span>
   </div>
 </header>
 
@@ -415,6 +416,37 @@ const LEAGUES = [
 let bets = JSON.parse(localStorage.getItem('betsmart_bets') || '[]');
 let initBankroll = parseFloat(localStorage.getItem('betsmart_init') || '200');
 
+// ── CHARGEMENT DYNAMIQUE (Flask si dispo, sinon données statiques) ──
+async function loadLiveMatches(){
+  try {
+    const res = await fetch('/api/matches', {signal: AbortSignal.timeout(3000)});
+    if(!res.ok) throw new Error();
+    const data = await res.json();
+    if(data.matches && data.matches.length > 0){
+      // Convertit le format Flask → format interne
+      const live = data.matches.map(m => ({
+        match:   m.match,
+        league:  m.league,
+        time:    m.date,
+        bet:     m.bet,
+        cote:    m.cote,
+        conf:    m.confidence,
+        label:   m.label.toLowerCase(),
+        badge:   m.badge || '',
+        over25:  m.over25 || 0,
+        avg:     m.avg_goals || 0,
+        betClass: m.bet.includes('Over')?'bt-over': m.bet.includes('BTTS')?'bt-btts':'bt-win',
+      }));
+      // Met à jour les matchs avec les données live
+      MATCHES.splice(0, MATCHES.length, ...live);
+      document.getElementById('sourceBadge').style.display = 'inline';
+    }
+  } catch(e) {
+    // Silencieux — on garde les données statiques
+  }
+  renderMatches();
+}
+
 // ── CLOCK ────────────────────────────────────────────────────────
 function updateClock(){
   const now = new Date();
@@ -649,7 +681,7 @@ function saveBet(){
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
-renderMatches();
+loadLiveMatches();   // essaie Flask, puis fallback statique
 renderLeagues();
 calcProjection();
 </script>
