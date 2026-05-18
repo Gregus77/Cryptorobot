@@ -62,7 +62,7 @@ LEAGUE_STATS = {
 
 SAMPLE_MATCHES = [
     # ⭐ MATCH VEDETTE — analyse réelle Brasileirao
-    {"match": "Fluminense vs São Paulo",            "league": "Brasileirão",   "date": "19:00", "bet": "Victoire Fluminense", "confidence": 0.78, "cote": 1.80, "label": "FORT",  "badge": "⭐ VEDETTE", "over25": 62.0, "btts": 58.0, "avg_goals": 3.0},
+    {"match": "Fluminense vs São Paulo",            "league": "Brasileirão",   "date": "19:00", "bet": "Flu gagne + Plus de 1.5 buts", "confidence": 0.80, "cote": 1.80, "label": "FORT",  "badge": "⭐ VEDETTE", "over25": 62.0, "btts": 58.0, "avg_goals": 3.0},
     {"match": "Bayern Munich vs Borussia Dortmund", "league": "Bundesliga",    "date": "20:30", "bet": "Over 2.5",           "confidence": 0.74, "cote": 1.65, "label": "FORT",  "badge": "🔥 EN FEU", "over25": 71.0, "btts": 65.0, "avg_goals": 2.75},
     {"match": "Man City vs Arsenal",                "league": "Premier League","date": "17:30", "bet": "Over 2.5",           "confidence": 0.70, "cote": 1.68, "label": "FORT",  "badge": "⚡ VALEUR", "over25": 68.0, "btts": 62.0, "avg_goals": 2.93},
     {"match": "PSG vs Marseille",                   "league": "Ligue 1",       "date": "21:00", "bet": "BTTS Oui",           "confidence": 0.66, "cote": 1.80, "label": "FORT",  "badge": "🔥 EN FEU", "over25": 63.0, "btts": 60.0, "avg_goals": 2.60},
