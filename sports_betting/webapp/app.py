@@ -61,14 +61,15 @@ LEAGUE_STATS = {
 }
 
 SAMPLE_MATCHES = [
-    {"match": "Bayern Munich vs Borussia Dortmund", "league": "Bundesliga",    "date": "21:30", "bet": "Over 2.5", "confidence": 0.74, "cote": 1.65, "label": "FORT"},
-    {"match": "Man City vs Arsenal",                "league": "Premier League","date": "17:30", "bet": "Over 2.5", "confidence": 0.70, "cote": 1.68, "label": "FORT"},
-    {"match": "PSG vs Marseille",                   "league": "Ligue 1",       "date": "21:00", "bet": "BTTS Oui", "confidence": 0.66, "cote": 1.80, "label": "FORT"},
-    {"match": "Real Madrid vs Atletico",            "league": "La Liga",       "date": "21:00", "bet": "Over 2.5", "confidence": 0.64, "cote": 1.72, "label": "MOYEN"},
-    {"match": "Napoli vs Inter Milan",              "league": "Serie A",       "date": "20:45", "bet": "BTTS Oui", "confidence": 0.62, "cote": 1.79, "label": "MOYEN"},
-    {"match": "Liverpool vs Chelsea",               "league": "Premier League","date": "16:00", "bet": "Over 2.5", "confidence": 0.68, "cote": 1.66, "label": "FORT"},
-    {"match": "Ajax vs PSV",                        "league": "Eredivisie",    "date": "18:45", "bet": "Over 2.5", "confidence": 0.72, "cote": 1.63, "label": "FORT"},
-    {"match": "Barcelona vs Sevilla",               "league": "La Liga",       "date": "21:00", "bet": "Over 2.5", "confidence": 0.61, "cote": 1.71, "label": "MOYEN"},
+    # ⭐ MATCH VEDETTE — analyse réelle Brasileirao
+    {"match": "Fluminense vs São Paulo",            "league": "Brasileirão",   "date": "19:00", "bet": "Victoire Fluminense", "confidence": 0.78, "cote": 1.80, "label": "FORT",  "badge": "⭐ VEDETTE", "over25": 62.0, "btts": 58.0, "avg_goals": 3.0},
+    {"match": "Bayern Munich vs Borussia Dortmund", "league": "Bundesliga",    "date": "20:30", "bet": "Over 2.5",           "confidence": 0.74, "cote": 1.65, "label": "FORT",  "badge": "🔥 EN FEU", "over25": 71.0, "btts": 65.0, "avg_goals": 2.75},
+    {"match": "Man City vs Arsenal",                "league": "Premier League","date": "17:30", "bet": "Over 2.5",           "confidence": 0.70, "cote": 1.68, "label": "FORT",  "badge": "⚡ VALEUR", "over25": 68.0, "btts": 62.0, "avg_goals": 2.93},
+    {"match": "PSG vs Marseille",                   "league": "Ligue 1",       "date": "21:00", "bet": "BTTS Oui",           "confidence": 0.66, "cote": 1.80, "label": "FORT",  "badge": "🔥 EN FEU", "over25": 63.0, "btts": 60.0, "avg_goals": 2.60},
+    {"match": "Real Madrid vs Atletico",            "league": "La Liga",       "date": "21:00", "bet": "Over 2.5",           "confidence": 0.64, "cote": 1.72, "label": "MOYEN", "badge": "",          "over25": 60.0, "btts": 55.0, "avg_goals": 2.58},
+    {"match": "Napoli vs Inter Milan",              "league": "Serie A",       "date": "20:45", "bet": "BTTS Oui",           "confidence": 0.62, "cote": 1.79, "label": "MOYEN", "badge": "⚡ VALEUR", "over25": 58.0, "btts": 58.0, "avg_goals": 2.72},
+    {"match": "Liverpool vs Chelsea",               "league": "Premier League","date": "16:00", "bet": "Over 2.5",           "confidence": 0.68, "cote": 1.66, "label": "FORT",  "badge": "📈 TENDANCE","over25": 66.0, "btts": 61.0, "avg_goals": 2.93},
+    {"match": "Ajax vs PSV",                        "league": "Eredivisie",    "date": "18:45", "bet": "Over 2.5",           "confidence": 0.72, "cote": 1.63, "label": "FORT",  "badge": "🔥 EN FEU", "over25": 69.0, "btts": 64.0, "avg_goals": 3.10},
 ]
 
 
